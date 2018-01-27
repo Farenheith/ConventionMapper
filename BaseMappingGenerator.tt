@@ -1,0 +1,116 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Reflection" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ output extension=".txt" #>
+
+<# 
+
+if (DestinationGroup == null)
+	throw new InvalidOperationException("DestinationGroup must not be null");
+
+if (Pairs == null)
+	throw new InvalidOperationException("Pairs must not be null");
+
+if (SourceTypeNamespace == null)
+	throw new InvalidOperationException("SourceTypeNamespace must not be null");
+
+if (DestinationTypeNamespace == null)
+	throw new InvalidOperationException("DestinationTypeNamespace must not be null");
+
+Run();
+
+#>
+
+<#+
+public string DestinationGroup { get; set;}
+public Dictionary<Type, Type> Pairs { get; set;}
+public string SourceTypeNamespace { get; set;}
+public string DestinationTypeNamespace { get; set;}
+
+protected void Run() {
+
+	IEnumerable<Tuple<Type, Type>> models;
+	foreach (var modelPair in Pairs) {
+		var origin = modelPair.Value;
+		var destination = modelPair.Key;
+		var originName = origin.Name;
+		var className = originName + "To" + DestinationGroup;
+		var destinationName = destination.Name;
+#>
+using ConventionMapper;
+using <#= SourceTypeNamespace #>;
+<#+ if (SourceTypeNamespace != DestinationTypeNamespace) { #>
+using <#= DestinationTypeNamespace #>;
+<#+ } #>
+using System.Collections.Generic;
+
+namespace Fly01.Vestuario.Application.AutoMapper.<#= DestinationGroup #>Mappings
+{
+    internal class <#= className #> : MappingTo<#= DestinationGroup #>Base<<#= originName #>, <#= destinationName #>>
+    {
+
+		public <#= className #>(Dictionary<object, object> _cache) : base(_cache) { }
+        public <#= className #>() : base() { }
+
+        public override <#= destinationName #> Convert(<#= originName #> source, <#= destinationName #> destination, ResolutionContext context)
+		{
+			var result = base.Convert(source, destination, context);
+			<#+
+				var properties = destination.GetProperties();
+				for (var i = 0; i < properties.Length; i++) {
+					var property = properties[i];
+					var originProperty = origin.GetProperties().FirstOrDefault(x => x.Name == property.Name);
+					if (originProperty != null) {
+						if (property.PropertyType.IsEnum) {
+			#>
+				result.<#= property.Name #> = (int)source.<#= property.Name #>;
+			<#+
+						} else if (property.PropertyType.Name == "Nullable`1"
+							|| property.PropertyType.Equals(originProperty.PropertyType)) {
+			#>
+				result.<#= property.Name #> = source.<#= property.Name #>;
+			<#+
+						} else {
+			#>
+			result.<#= property.Name #> = Get<<#= GetTypeName(property.PropertyType) #>>(source.<#= property.Name #>);
+			<#+
+						}
+					}
+				}
+			#>
+			return result;
+		}
+    }
+}
+<#+
+	  // End of file.
+	  SaveOutput(DestinationGroup + "Mappings\\" + className + ".cs");
+	}
+}
+
+private void SaveOutput(string outputFileName) {
+  string templateDirectory = Directory.GetCurrentDirectory();
+  string outputFilePath = Path.Combine(templateDirectory, "output");
+  outputFilePath = Path.Combine(outputFilePath, outputFileName);
+  Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
+  File.WriteAllText(outputFilePath, this.GenerationEnvironment.ToString()); 
+  this.GenerationEnvironment.Remove(0, this.GenerationEnvironment.Length);
+	Console.WriteLine("Created " + outputFilePath);
+}
+
+private string GetTypeName(Type type)
+{
+	var generics = type.GetGenericArguments();
+	if (generics.Length == 0)
+		return type.Name;
+	else if (type.GetGenericTypeDefinition() == typeof(Nullable<>))
+		return type.GetGenericArguments()[0].Name + "?";
+	else
+		return type.GetGenericArguments()[0].Name;
+}
+#>

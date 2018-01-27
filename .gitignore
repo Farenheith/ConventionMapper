@@ -1,0 +1,14 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/bin
+/obj
+/ConventionMapper/bin
+/ConventionMapper/obj
+/ConventionMapper.Generator/bin
+/ConventionMapper.Generator/obj
+/ConventionMapper.Test/bin
+/ConventionMapper.Test/obj
+/packages

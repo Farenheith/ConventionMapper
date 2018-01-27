@@ -1,0 +1,137 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" visibility="internal" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Reflection" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ output extension=".txt" #>
+
+<# 
+
+if (_options.DestinationGroup == null)
+	throw new InvalidOperationException("DestinationGroup must not be null");
+
+if (_options.Pairs == null)
+	throw new InvalidOperationException("Pairs must not be null");
+
+if (_options.GeneratedNamespace == null)
+	throw new InvalidOperationException("GeneratedNamespace must not be null");
+
+Run();
+
+#>
+
+<#+
+
+internal readonly string _outputDirectory;
+private readonly MappingGenerator _options;
+
+public string OutputDirectory { get {
+		return _outputDirectory;
+	}
+}
+
+public BaseMappingGenerator(MappingGenerator options) {
+	_options = options;
+	_outputDirectory = Path.Combine(Directory.GetCurrentDirectory(), "output\\" + _options.DestinationGroup + "Mappings\\");
+}
+
+protected void Run() {
+
+	IEnumerable<Tuple<Type, Type>> models;
+	foreach (var modelPair in _options.Pairs) {
+		var source = modelPair.Value;
+		var destination = modelPair.Key;
+		var originName = source.Name;
+		var className = originName + "To" + _options.DestinationGroup;
+		var destinationName = destination.Name;
+#>
+using ConventionMapper;
+<#+ foreach (var include in GetRequiredNamespaces(source, destination)) { #>
+using <#= include #>;
+<#+ } #>
+using System.Collections.Generic;
+
+namespace <#= _options.GeneratedNamespace #>Mappings
+{
+  <#=  _options.Acessibility.ToString() #> partial class <#= className #> : MappingBase, IMapping<<#= originName #>, <#= destinationName #>>
+  {
+    public <#= className #>(IConversionCache _cache) : base(_cache) { }
+    public <#= className #>() : base() { }
+
+    public <#= destinationName #> Convert(<#= originName #> source, <#= destinationName #> destination)
+    {
+			<#+
+				var binding = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+				var properties = destination.GetProperties(binding);
+				for (var i = 0; i < properties.Length; i++) {
+					var property = properties[i];
+					var originProperty = source.GetProperties(binding).FirstOrDefault(x => x.Name == property.Name);
+					if (originProperty != null) {
+						var setter = property.SetMethod;
+                        var getter = originProperty.GetMethod;
+						if (setter == null && getter == null)
+							continue;
+                        if (_options.Acessibility == AcessibilityLevelEnum.@public && !setter.IsPublic && !getter.IsPublic)
+                            continue;
+                        if (setter.IsFamily || setter.IsPrivate || getter.IsFamily || getter.IsPrivate)
+                            continue;
+						if (property.PropertyType.IsEnum) {
+			#>
+      destination.<#= property.Name #> = (int)source.<#= property.Name #>;
+			<#+
+						} else if (property.PropertyType.Name == "Nullable`1"
+							|| property.PropertyType.Equals(originProperty.PropertyType)) {
+			#>
+      destination.<#= property.Name #> = source.<#= property.Name #>;
+			<#+
+						} else {
+			#>
+      destination.<#= property.Name #> = Get<<#= GetTypeName(property.PropertyType) #>>(source.<#= property.Name #>);
+			<#+
+						}
+					}
+				}
+			#>
+      return TreatResult(destination);
+    }
+
+	public <#= destinationName #> Map(<#= originName #> source)
+	{
+		return Map<<#= originName #>, <#= destinationName #>>(source);
+	}
+  }
+}
+<#+
+	  // End of file.
+	  SaveOutput(className + ".cs");
+	}
+}
+
+private void SaveOutput(string outputFileName) {
+  var outputFilePath = Path.Combine(_outputDirectory, outputFileName);
+  Directory.CreateDirectory(_outputDirectory);
+  File.WriteAllText(outputFilePath, this.GenerationEnvironment.ToString()); 
+  this.GenerationEnvironment.Remove(0, this.GenerationEnvironment.Length);
+	Console.WriteLine("Created " + outputFilePath);
+}
+
+private static string GetTypeName(Type type)
+{
+	var generics = type.GetGenericArguments();
+	if (generics.Length == 0)
+		return type.Name;
+	else if (type.GetGenericTypeDefinition() == typeof(Nullable<>))
+		return type.GetGenericArguments()[0].Name + "?";
+	else
+		return type.GetGenericArguments()[0].Name;
+}
+
+private static IEnumerable<string> GetRequiredNamespaces(Type source, Type destination) {
+	yield return source.Namespace;
+	if (source.Namespace != destination.Namespace)
+		yield return destination.Namespace;
+}
+#>
