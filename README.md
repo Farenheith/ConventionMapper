@@ -23,7 +23,7 @@ The conventions are:
 
 # Installation
 
-For now you need to download the sourcecode and compile it yourself.  ConventionMapper.Generator.dll is only needed at the generation project while ConventionMapper.dll are needed in any project you'll use.
+For now you need to download the sourcecode and compile it yourself but I'll make it available via Nuget asap. ConventionMapper.Generator.dll is only needed at the generation project while ConventionMapper.dll are needed in any project you'll use.
 
 The project ConventionMapper is made under the .NET Standard, so I expect you'll don't need to worry about any compatibility issue, but ConventionMapper.Generator needed to be made with .NET Framework because of T4 template generators. Be warned.
 
