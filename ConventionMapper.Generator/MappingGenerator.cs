@@ -160,15 +160,12 @@ namespace ConventionMapper.Generator
             };
         }
 
-        public MappingGenerator GetReverse(string generatedNameSpace, AcessibilityLevelEnum? acessibility = null)
-            => GetReverseOptions(generatedNameSpace, GetDestinationGroup(generatedNameSpace), acessibility);
-
-        public MappingGenerator GetReverse(string generatedNameSpace, string newDestinationGroup, AcessibilityLevelEnum? acessibility = null)
+        public MappingGenerator GetReverse(string generatedNameSpace, string newDestinationGroup = null, AcessibilityLevelEnum? acessibility = null)
         {
             return new MappingGenerator()
             {
                 GeneratedNamespace = generatedNameSpace,
-                DestinationGroup = newDestinationGroup,
+                DestinationGroup = newDestinationGroup ?? GetDestinationGroup(generatedNameSpace),
                 Acessibility = acessibility == null ? Acessibility : acessibility.Value,
                 Pairs = Pairs.Select(x => new KeyValuePair<Type, Type>(x.Value, x.Key))
             };
