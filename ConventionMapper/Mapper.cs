@@ -30,28 +30,21 @@ namespace ConventionMapper
         /// <param name="source">source instance</param>
         /// <returns>A instance of <typeparamref name="TDestination"/></returns>
         public static TDestination Map<TDestination>(object source) where TDestination : new()
-        {
-            var type = source.GetType();
-            var method = pairMap.MakeGenericMethod(type, typeof(TDestination));
-
-            return (TDestination)method.Invoke(null, new object[] { source });
-        }
+            => (TDestination)pairMap
+                    .MakeGenericMethod(source.GetType(), typeof(TDestination))
+                    .Invoke(null, new object[] { source });
 
         /// <summary>
         /// Explicit convert a instance of <typeparamref name="TSource"/> to <typeparamref name="TDestination"/>
-        /// This method is slight more performatic than Map because of lass use of Reflection
+        /// This method is slight more performatic than Map<<typeparamref name="TDestination"/>> because of less use of Reflection
         /// </summary>
         /// <typeparam name="TSource">Source type</typeparam>
         /// <typeparam name="TDestination">Destination type</typeparam>
         /// <param name="source">A instance of <typeparamref name="TSource"/></param>
         /// <returns>A instance of <typeparamref name="TDestination"/></returns>
         public static TDestination Map<TSource, TDestination>(TSource source) where TDestination : new()
-        {
-            var mappingType = GetMapperType<TDestination>(source.GetType());
-            var mapping = mappingType.New<IMapping<TSource, TDestination>>();
-
-            return mapping.Map(source);
-        }
+            => GetMapperType<TDestination>(source.GetType())
+                .New<IMapping<TSource, TDestination>>().Map(source);
 
         #region MapperTypes loaders
         /// <summary>
@@ -81,17 +74,15 @@ namespace ConventionMapper
         /// <param name="types">The given Type enumerable</param>
         public static void Load(IEnumerable<Type> types)
         {
-            var mappers = types.Where(x => x.BaseType != null
-                    && !x.IsAbstract
-                    && typeof(MappingBase).IsAssignableFrom(x)
-                    && x.GetInterfaces().Any(i => i.GetGenericTypeDefinition() == typeof(IMapping<,>)));
-            
-            foreach (var mapper in mappers)
+
+            foreach (var mapper in types.Where(x => x.BaseType != null
+                                        && !x.IsAbstract
+                                        && typeof(MappingBase).IsAssignableFrom(x)
+                                        && x.GetInterfaces().Any(i => i.GetGenericTypeDefinition() == typeof(IMapping<,>))))
             {
-                var interfaces = mapper.GetInterfaces()
+                foreach (var i in mapper.GetInterfaces()
                                     .Where(i => i.GetGenericTypeDefinition() == typeof(IMapping<,>))
-                                    .Select(i => i.GetGenericArguments());
-                foreach (var i in interfaces)
+                                    .Select(i => i.GetGenericArguments()))
                     mappings[new CacheKey(i[0], i[1])] = mapper;
             }
         }

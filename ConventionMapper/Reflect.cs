@@ -7,6 +7,6 @@ namespace ConventionMapper
 {
     internal static class Reflect
     {
-        public static T New<T>(this Type type, params object[] parameters) => (T)Activator.CreateInstance(type, parameters);
+        internal static T New<T>(this Type type, params object[] parameters) => (T)Activator.CreateInstance(type, parameters);
     }
 }
