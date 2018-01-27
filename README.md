@@ -34,7 +34,7 @@ The project ConventionMapper is made under the .NET Standard, so I expect you'll
 
 The generated files will be saved at output folder in the same folder of the binaries of the generation project, separated by folders with namespace name, ready to be copied and pasted at your own project.
 
-# Using the mapping
+# Using the mappings
 
 To use the mapping, you need to first initialize the mapper at your project, like this:
 
@@ -63,3 +63,8 @@ var viewModel = mapping.Map(instance);
 ```
 
 There are ways to use ConventionMapper with more freedom that will be explained ASAP, or you can look into the source code and figure out by yourself!
+
+# Customizing specific mappings
+
+All classes generated are partial so you can write your own counterpart to make some specific treatment if you need.
+To do so, just override the TreatResult method and do wathever you need to.
