@@ -163,7 +163,7 @@ namespace ConventionMapper.Generator
         public MappingGenerator GetReverse(string generatedNameSpace, AcessibilityLevelEnum? acessibility = null)
             => GetReverseOptions(generatedNameSpace, GetDestinationGroup(generatedNameSpace), acessibility);
 
-        public MappingGenerator GetReverseOptions(string generatedNameSpace, string newDestinationGroup, AcessibilityLevelEnum? acessibility = null)
+        public MappingGenerator GetReverse(string generatedNameSpace, string newDestinationGroup, AcessibilityLevelEnum? acessibility = null)
         {
             return new MappingGenerator()
             {
