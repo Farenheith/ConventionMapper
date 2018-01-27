@@ -56,7 +56,7 @@ If you're planning to do a big amount of maps of the same type, is recommended t
 ```csharp
 var mapping = Mapper.Get<ClassModel, ClassViewModel>();
 
-var viewModel = mapping.Convert(instance);
+var viewModel = mapping.Map(instance);
 ```
 
 There are ways to use ConventionMapper with more freedom that will be explained ASAP, or you can look into the source code and figure out by yourself!
