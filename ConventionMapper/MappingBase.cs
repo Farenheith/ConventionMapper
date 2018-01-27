@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Collections;
 using System;
+using System.Reflection;
 
 namespace ConventionMapper
 {
     public abstract class MappingBase
     {
+        private static MethodInfo convert = typeof(MappingBase).GetMethod("Convert", BindingFlags.NonPublic | BindingFlags.Instance);
         private readonly IConversionCache cache;
         private Dictionary<CacheKey, object> ChildMappers { get; } = new ConversionCache();
         private bool destroyCache = false;
@@ -84,11 +86,19 @@ namespace ConventionMapper
             if (cache.DoCache(modelOrign, out TModel result))
                 return result;
 
-            var mapping = GetMappers<TModel>(modelOrign.GetType(), cache);
-            typeof(IMapping<,>).GetGenTypeMethod("Convert", modelOrign.GetType(), typeof(TModel))
-                .Invoke(mapping, new object[] {modelOrign, result});
+            convert.MakeGenericMethod(modelOrign.GetType(), typeof(TModel))
+                .Invoke(this, new object[] {modelOrign, result});
             return result;
         }
+
+        private TDestination Convert<TSource, TDestination>(TSource source, TDestination destination)
+            where TSource : class, new()
+            where TDestination : class, new()
+            => GetMappers<TSource, TDestination>(cache).Convert(source, destination);
+
+        private IMapping<TSource,TDestination> GetMappers<TSource, TDestination>(IConversionCache cache)
+            where TSource : class, new() where TDestination : class, new()
+            => (IMapping<TSource, TDestination>)GetMappers<TDestination>(typeof(TSource), cache);
 
         private object GetMappers<TModel>(Type sourceType, IConversionCache cache) where TModel : class, new()
         {

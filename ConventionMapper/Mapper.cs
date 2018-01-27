@@ -8,9 +8,11 @@ namespace ConventionMapper
     public static class Mapper
     {
         private static readonly Dictionary<CacheKey, Type> mappings = new Dictionary<CacheKey, Type>();
+        private static readonly MethodInfo pairMap = typeof(Mapper)
+                .GetMethods().First(m => m.Name == "Map" && m.GetGenericArguments().Length == 2);
 
         internal static MappingBase Get<TDestination>(Type source, IConversionCache cache) where TDestination : new()
-            => Reflect.New<MappingBase>(GetMapperType<TDestination>(source), new object[] { cache });
+            => GetMapperType<TDestination>(source).New<MappingBase>(cache);
 
         /// <summary>
         /// Returns an instance of the IMapping for <<typeparamref name="TSource"/>, <typeparamref name="TDestination"/>> loaded
@@ -19,7 +21,7 @@ namespace ConventionMapper
         /// <typeparam name="TDestination">The destination class</typeparam>
         /// <returns>A instance of IMapping<<typeparamref name="TSource"/>, <typeparamref name="TDestination"/>></returns>
         public static IMapping<TSource, TDestination> Get<TSource, TDestination>() where TDestination : new() 
-            => Reflect.New<IMapping<TSource, TDestination>>(GetMapperType<TSource, TDestination>());
+            => GetMapperType<TSource, TDestination>().New<IMapping<TSource, TDestination>>();
 
         /// <summary>
         /// Map the source object to a instance of <typeparamref name="TDestination"/>
@@ -30,7 +32,7 @@ namespace ConventionMapper
         public static TDestination Map<TDestination>(object source) where TDestination : new()
         {
             var type = source.GetType();
-            var method = typeof(Mapper).GetGenMethod("PairMap", type, typeof(TDestination));
+            var method = pairMap.MakeGenericMethod(type, typeof(TDestination));
 
             return (TDestination)method.Invoke(null, new object[] { source });
         }
@@ -43,7 +45,7 @@ namespace ConventionMapper
         /// <typeparam name="TDestination">Destination type</typeparam>
         /// <param name="source">A instance of <typeparamref name="TSource"/></param>
         /// <returns>A instance of <typeparamref name="TDestination"/></returns>
-        public static TDestination PairMap<TSource, TDestination>(TSource source) where TDestination : new()
+        public static TDestination Map<TSource, TDestination>(TSource source) where TDestination : new()
         {
             var mappingType = GetMapperType<TDestination>(source.GetType());
             var mapping = mappingType.New<IMapping<TSource, TDestination>>();
