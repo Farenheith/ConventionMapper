@@ -19,7 +19,7 @@ The conventions are:
 * There's another base class for all destination classes you need to map unrelated with the source base class;
 * All properties of both classes are composed by value types, classes to be mapped or ICollections of classes to be mapped. Anything other than that will generate an error or unexpected behavior at the current stage of the project;
 * There is a strict naming rule between class properties, ie, properties with the same name have the same types, or types to be mapped to each other. Regardless, properties with no counterpart are accepted but will not be mapped;
-* There is a strict naming rule between classes where destination classes ends with the final part of they own namespace. For example, in the code above is expected that the model classes have names like Person, Product and Invoice, while the viewmodel classes should be named like PersonViewModel, ProductViewModel, InvoiceViewModel;
+* There is a strict naming rule between classes where destination classes ends with the final part of they own namespace. For example, in the code above is expected that the model classes have names like Person, Product and Invoice, while the viewmodel classes should be named like PersonViewModel, ProductViewModel, InvoiceViewModel, and their namespace must be MyProject.ViewModel;
 
 # Installation
 
